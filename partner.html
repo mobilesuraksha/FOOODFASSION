@@ -3,132 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partner Portal</title>
+    <title>Partner Portal | F-Store</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
-    <style>body{font-family:'Outfit',sans-serif;background:#f8fafc;}</style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f8fafc; }
+        .glass { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .slide-up { animation: slideUp 0.4s ease-out forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .blink { animation: blinker 1.5s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-8 select-none text-slate-800">
 
     <div id="login" class="fixed inset-0 bg-white z-50 flex items-center justify-center p-6">
         <div class="w-full max-w-sm text-center">
-            <h2 class="text-3xl font-black mb-6 text-orange-600 tracking-tighter">PARTNER LOGIN</h2>
-            <input id="lPhone" type="number" placeholder="Registered Mobile" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-3 font-bold bg-slate-50 outline-none">
-            <input id="lPass" type="password" placeholder="Password (From Admin)" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-6 font-bold bg-slate-50 outline-none">
-            <button id="loginBtn" class="bg-orange-600 text-white w-full py-4 rounded-2xl font-bold shadow-xl hover:scale-105 transition">ENTER DASHBOARD</button>
+            <div class="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-6 text-orange-600 text-3xl font-black">P</div>
+            <h2 class="text-3xl font-black mb-2 text-slate-800 tracking-tighter">PARTNER LOGIN</h2>
+            <p class="text-xs text-slate-400 mb-8 font-bold uppercase tracking-widest">Restaurant Dashboard</p>
+            
+            <input id="lPhone" type="number" placeholder="Registered Mobile" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-3 font-bold bg-slate-50 outline-none focus:border-orange-500 transition">
+            <input id="lPass" type="password" placeholder="Password" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-6 font-bold bg-slate-50 outline-none focus:border-orange-500 transition">
+            
+            <button id="loginBtn" class="bg-orange-600 text-white w-full py-4 rounded-2xl font-bold shadow-xl hover:scale-105 transition mb-4">ENTER DASHBOARD</button>
+            
+            <button onclick="showRegister()" class="text-slate-400 text-xs font-bold underline hover:text-orange-600">New Shop? Register Here</button>
         </div>
     </div>
 
-    <div id="dash" class="hidden max-w-lg mx-auto pb-20">
+    <div id="register" class="fixed inset-0 bg-white z-50 flex items-center justify-center p-6 hidden">
+        <div class="w-full max-w-sm relative h-full overflow-y-auto pt-10 pb-10">
+            <button onclick="showLogin()" class="absolute top-4 left-0 text-slate-400 font-bold text-sm flex items-center gap-1"><i class="fas fa-arrow-left"></i> Back</button>
+            
+            <h2 class="text-2xl font-black mb-6 text-slate-800 tracking-tighter mt-4">Register New Shop</h2>
+            
+            <div class="space-y-4">
+                <div><label class="text-xs font-bold text-slate-400 ml-2">Shop Name</label><input id="regShopName" placeholder="e.g. Burger King" class="border-2 border-slate-100 p-3 rounded-xl w-full font-bold bg-slate-50 outline-none focus:border-orange-500"></div>
+                <div><label class="text-xs font-bold text-slate-400 ml-2">Owner Name</label><input id="regOwnerName" placeholder="Your Name" class="border-2 border-slate-100 p-3 rounded-xl w-full font-bold bg-slate-50 outline-none focus:border-orange-500"></div>
+                <div><label class="text-xs font-bold text-slate-400 ml-2">Mobile Number</label><input id="regPhone" type="number" placeholder="10 Digit Mobile" class="border-2 border-slate-100 p-3 rounded-xl w-full font-bold bg-slate-50 outline-none focus:border-orange-500"></div>
+                
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-center">
+                    <p class="text-xs text-blue-500 font-bold mb-2">📍 Exact Shop Location (Required)</p>
+                    <button onclick="detectLocation()" id="locBtn" class="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-bold shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition animate-pulse"><i class="fas fa-crosshairs text-lg"></i> DETECT LIVE LOCATION</button>
+                    <p id="locStatus" class="text-[10px] text-slate-400 mt-2">Click button while at the shop.</p>
+                </div>
+                <input type="hidden" id="latLngStr">
+                <div><label class="text-xs font-bold text-slate-400 ml-2">Description / Address</label><textarea id="regBio" placeholder="Full address and details..." class="border-2 border-slate-100 p-3 rounded-xl w-full font-bold bg-slate-50 outline-none focus:border-orange-500 h-20"></textarea></div>
+            </div>
+
+            <button onclick="submitRequest()" id="submitBtn" class="bg-slate-900 text-white w-full py-4 rounded-2xl font-bold shadow-xl mt-6 hover:scale-105 transition mb-10">SUBMIT REQUEST</button>
+        </div>
+    </div>
+
+    <div id="dash" class="hidden max-w-xl mx-auto pb-20">
         <div class="flex justify-between items-center mb-8">
-            <div><h1 class="text-2xl font-black text-slate-800" id="sName">Shop</h1><p class="text-xs text-slate-400 font-bold">Partner Dashboard</p></div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-800 leading-none" id="sName">Shop</h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    <p class="text-xs text-green-600 font-bold uppercase tracking-wider">Live & Receiving Orders</p>
+                </div>
+            </div>
             <button onclick="location.reload()" class="text-red-500 text-xs font-bold border border-red-100 px-4 py-2 rounded-xl hover:bg-red-50">LOGOUT</button>
         </div>
 
-        <div class="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 mb-8 border border-slate-50">
-            <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-700">Add Menu Item</h3>
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/60 mb-8 border border-slate-100">
+            <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-700"><i class="fas fa-plus-circle text-orange-500"></i> Add Menu Item</h3>
             <div class="space-y-3">
-                <input id="pName" placeholder="Item Name" class="w-full border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none">
+                <input id="pName" placeholder="Item Name" class="w-full border-2 border-slate-100 p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none focus:border-orange-500">
                 <div class="flex gap-3">
-                    <input id="pPrice" type="number" placeholder="Price" class="w-1/3 border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none">
-                    <input id="pImg" type="file" class="w-2/3 border p-3 rounded-xl text-xs bg-slate-50">
+                    <input id="pPrice" type="number" placeholder="Price (₹)" class="w-1/3 border-2 border-slate-100 p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none focus:border-orange-500">
+                    <div class="w-2/3 border-2 border-dashed border-slate-300 p-3 rounded-xl text-xs bg-slate-50 relative hover:bg-slate-100 transition">
+                        <input id="pImg" type="file" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 z-10 cursor-pointer">
+                        <span class="text-slate-400 font-bold flex items-center justify-center h-full gap-2"><i class="fas fa-camera"></i> Upload Image</span>
+                    </div>
                 </div>
-                <select id="pCat" class="w-full border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none"><option>Food</option><option>Fashion</option><option>Mobile</option></select>
-                <button id="addProdBtn" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg">ADD TO MENU</button>
+                <select id="pCat" class="w-full border-2 border-slate-100 p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none focus:border-orange-500">
+                    <option>Food</option><option>Fashion</option><option>Mobile</option><option>Grocery</option>
+                </select>
+                <button id="addProdBtn" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-800 transition">ADD TO MENU</button>
             </div>
         </div>
 
-        <h3 class="font-black text-xl mb-4 text-slate-800">Incoming Orders</h3>
-        <div id="orders" class="space-y-4"></div>
+        <h3 class="font-black text-xl mb-4 text-slate-800 flex items-center gap-2"><i class="fas fa-bell text-orange-500"></i> Incoming Orders</h3>
+        <div id="orders" class="space-y-4 pb-20">
+            <div class="text-center py-10 opacity-30"><i class="fas fa-utensils text-4xl mb-3"></i><p class="font-bold text-sm">No active orders</p></div>
+        </div>
     </div>
+
+    <audio id="orderSound" src="https://assets.mixkit.co/active_storage/sfx/933/933-preview.mp3"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCwyzE9sdZZUU3dHUix23zEzFkGr2nNRyw",
-            authDomain: "foodhub-8ae15.firebaseapp.com",
-            projectId: "foodhub-8ae15",
-            storageBucket: "foodhub-8ae15.firebasestorage.app",
-            messagingSenderId: "274265160043",
-            appId: "1:274265160043:web:81238fd424681e7f70342e",
-            measurementId: "G-00YX8EM4L7"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyCwyzE9sdZZUU3dHUix23zEzFkGr2nNRyw", authDomain: "foodhub-8ae15.firebaseapp.com", projectId: "foodhub-8ae15", storageBucket: "foodhub-8ae15.firebasestorage.app", messagingSenderId: "274265160043", appId: "1:274265160043:web:81238fd424681e7f70342e" };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         let me = null;
+        let previousOrderCount = 0;
+
+        window.showRegister = () => { document.getElementById('login').classList.add('hidden'); document.getElementById('register').classList.remove('hidden'); }
+        window.showLogin = () => { document.getElementById('register').classList.add('hidden'); document.getElementById('login').classList.remove('hidden'); }
+
+        window.detectLocation = () => {
+            let btn = document.getElementById('locBtn');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Getting GPS...`;
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => { document.getElementById('latLngStr').value = `${p.coords.latitude},${p.coords.longitude}`; btn.innerHTML = `<i class="fas fa-check-circle"></i> LOCATION SAVED`; btn.className = "w-full py-3 bg-green-500 text-white rounded-xl text-xs font-bold shadow-lg"; document.getElementById('locStatus').innerText = `Locked: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`; },
+                    (e) => { alert("GPS Denied"); btn.innerHTML = "RETRY LOCATION"; }
+                );
+            } else alert("GPS not supported.");
+        }
+
+        window.submitRequest = async () => {
+            let sName = document.getElementById('regShopName').value;
+            let oName = document.getElementById('regOwnerName').value;
+            let phone = document.getElementById('regPhone').value;
+            let bio = document.getElementById('regBio').value;
+            let location = document.getElementById('latLngStr').value;
+            if(!sName || !phone || !location) return alert("Fill all details & Detect Location!");
+            try {
+                let btn = document.getElementById('submitBtn'); btn.innerText = "Sending...";
+                await addDoc(collection(db, "shop_requests"), { shopName: sName, owner: oName, phone: phone, bio: bio, location: location, status: 'Pending', timestamp: Date.now() });
+                alert("✅ Request Sent! Wait for Admin Approval."); window.showLogin();
+            } catch(e) { alert("Error: " + e.message); }
+        };
 
         document.getElementById('loginBtn').onclick = async () => {
             let p = document.getElementById('lPhone').value, pass = document.getElementById('lPass').value;
+            if(!p || !pass) return alert("Enter credentials");
             const q = query(collection(db, "shops"), where("phone", "==", p), where("pass", "==", pass));
             const snap = await getDocs(q);
-            
             if(!snap.empty) {
                 me = { id: snap.docs[0].id, ...snap.docs[0].data() };
                 document.getElementById('login').classList.add('hidden');
                 document.getElementById('dash').classList.remove('hidden');
                 document.getElementById('sName').innerText = me.shopName;
                 startListening();
-            } else alert("Invalid Credentials");
-        };
-
-        document.getElementById('addProdBtn').onclick = () => {
-            let name=document.getElementById('pName').value, price=document.getElementById('pPrice').value, cat=document.getElementById('pCat').value;
-            let file = document.getElementById('pImg').files[0];
-
-            if(!name || !price || !file) return alert("Fill details");
-            
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async function() {
-                try {
-                    await addDoc(collection(db, "products"), {
-                        shopId: me.id, name, price, cat, img: reader.result
-                    });
-                    alert("Added!");
-                    document.getElementById('pName').value = "";
-                } catch(e) { alert("Error: Image likely too big."); }
-            };
+            } else alert("Invalid Login or Shop not yet Approved.");
         };
 
         function startListening() {
             const q = query(collection(db, "orders"), where("shopId", "==", me.id));
             onSnapshot(q, (snap) => {
                 let orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                // Sort Pending first
-                orders.sort((a,b) => (a.status === 'Pending' ? -1 : 1));
+                orders.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+                
+                if (orders.length > previousOrderCount) { document.getElementById('orderSound').play().catch(()=>{}); }
+                previousOrderCount = orders.length;
                 renderOrders(orders);
             });
         }
 
         function renderOrders(orders) {
+            if(orders.length === 0) { document.getElementById('orders').innerHTML = `<div class="text-center py-10 opacity-30"><i class="fas fa-utensils text-4xl mb-3"></i><p class="font-bold text-sm">No active orders</p></div>`; return; }
+
             document.getElementById('orders').innerHTML = orders.map(o => {
                 let btn = '';
-                if(o.status=='Pending') btn=`<button onclick="window.sts('${o.id}','Preparing')" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg">ACCEPT & COOK</button>`;
-                else if(o.status=='Preparing') btn=`<button onclick="window.sts('${o.id}','Accepted')" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg animate-pulse">FOOD READY</button>`;
-                else btn=`<div class="mt-3 text-center text-xs font-bold text-slate-400 bg-slate-100 py-2 rounded-xl">Status: ${o.status}</div>`;
+
+                // *** CRITICAL FIX FOR BUTTON VISIBILITY ***
+                // Group 1: New Orders (Pending or Approved by Admin)
+                if(o.status === 'Pending' || o.status === 'Approved') {
+                    btn = `<button onclick="window.upd('${o.id}','Preparing')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg hover:scale-105 transition">ACCEPT & START COOKING</button>`;
+                } 
+                // Group 2: Cooking Phase (Preparing or Rider Accepted)
+                else if(o.status === 'Preparing' || o.status === 'Accepted') {
+                    btn = `<button onclick="window.upd('${o.id}','Ready for Pickup')" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg animate-pulse hover:bg-green-600">FOOD READY (NOTIFY RIDER 🔔)</button>`;
+                } 
+                // Group 3: Waiting Phase
+                else if(o.status === 'Ready for Pickup') {
+                    btn = `<div class="mt-3 text-center text-xs font-bold text-green-600 bg-green-50 py-3 rounded-xl border border-green-200">🔔 Rider Notified. Waiting...</div>`;
+                } 
+                // Group 4: Delivery Phase
+                else {
+                    btn = `<div class="mt-3 text-center text-xs font-bold text-slate-400 bg-slate-100 py-3 rounded-xl">Status: ${o.status}</div>`;
+                }
 
                 return `
-                <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-lg mb-4">
+                <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-lg slide-up relative overflow-hidden">
+                    ${['Pending','Approved'].includes(o.status) ? '<div class="absolute top-0 right-0 bg-yellow-400 text-white text-[10px] font-bold px-2 py-1 rounded-bl-xl blink">NEW</div>' : ''}
                     <div class="flex justify-between items-center mb-3 border-b border-slate-50 pb-2">
                         <span class="font-black text-slate-700 text-lg">#${o.id.substr(0,5)}</span>
-                        <span class="text-green-600 font-black text-lg">₹${o.total}</span>
+                        <span class="font-black text-orange-600 text-lg">₹${o.total}</span>
                     </div>
-                    <div class="text-sm font-bold text-slate-600 bg-slate-50 p-3 rounded-xl mb-2">${o.items.map(x=>`${x.qty}x ${x.name}`).join('<br>')}</div>
+                    <div class="bg-slate-50 p-3 rounded-xl mb-3">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-1">Items</p>
+                        <div class="text-sm font-bold text-slate-700">${o.items.map(x=>`<div class="flex justify-between"><span>${x.name}</span><span>x${x.qty}</span></div>`).join('')}</div>
+                    </div>
+                    <p class="text-xs font-bold text-slate-400 mb-1">Customer: ${o.customer.name}</p>
                     ${btn}
                 </div>`;
-            }).join('') || '<div class="text-center py-10 opacity-50"><p>No orders yet</p></div>';
+            }).join('');
         }
 
-        window.sts = async (oid, s) => {
+        window.upd = async (oid, s) => {
             await updateDoc(doc(db, "orders", oid), { 
-                status: s,
-                timeline: arrayUnion({ status: s, msg: `Shop: ${s}`, time: new Date().toLocaleTimeString() })
+                status: s, 
+                timeline: arrayUnion({ status: s, msg: `Shop Update: ${s}`, time: new Date().toLocaleTimeString() }) 
             });
         };
 
+        document.getElementById('addProdBtn').onclick = () => {
+            let name = document.getElementById('pName').value, price = document.getElementById('pPrice').value, cat = document.getElementById('pCat').value, file = document.getElementById('pImg').files[0];
+            if(!name || !price || !file) return alert("Fill all details & Image");
+            if(file.size > 1000000) return alert("Image too large! Use < 1MB");
+            const r = new FileReader(); r.readAsDataURL(file);
+            r.onload = async function() {
+                try {
+                    let btn = document.getElementById('addProdBtn'); btn.innerText = "Saving...";
+                    await addDoc(collection(db, "products"), { shopId: me.id, name, price, cat, img: r.result });
+                    alert("✅ Item Added!"); document.getElementById('pName').value=""; document.getElementById('pPrice').value=""; document.getElementById('pImg').value=""; btn.innerText = "ADD TO MENU";
+                } catch(e) { alert("Error: " + e.message); }
+            };
+        };
     </script>
 </body>
 </html>
