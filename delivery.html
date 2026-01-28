@@ -5,13 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rider App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; }</style>
+    <style>body{font-family:'Outfit',sans-serif;background:#0f172a;color:white;}</style>
 </head>
 <body class="p-4">
 
@@ -29,88 +27,101 @@
         const db = firebase.firestore();
     </script>
 
-    <div id="dash" class="max-w-md mx-auto">
-        <h1 class="text-2xl font-black mb-6 text-orange-500">Rider Dashboard</h1>
+    <div id="login" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm text-center">
+            <h2 class="text-3xl font-black mb-6 text-orange-500">RIDER APP</h2>
+            <input id="lPhone" type="number" placeholder="Mobile" class="w-full bg-slate-800 p-4 rounded-xl mb-3 border border-slate-700 outline-none text-white">
+            <input id="lPass" type="password" placeholder="Password" class="w-full bg-slate-800 p-4 rounded-xl mb-6 border border-slate-700 outline-none text-white">
+            <button onclick="login()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold hover:scale-105 transition">START WORK</button>
+        </div>
+    </div>
 
-        <div class="bg-slate-800 p-6 rounded-3xl mb-6 shadow-lg border border-slate-700">
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Total Earnings (Today)</p>
-            <h2 class="text-5xl font-black mb-4 tracking-tighter" id="totalEarn">₹0</h2>
+    <div id="dash" class="hidden max-w-md mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <div><h1 class="text-2xl font-black" id="rName">Rider</h1><span class="text-xs text-green-400">● Online</span></div>
+            <button onclick="location.reload()" class="bg-red-500/20 text-red-500 px-3 py-1 rounded text-xs font-bold">Logout</button>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-2xl mb-6 border border-slate-700 shadow-lg">
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-1">Total Earnings</p>
+            <h2 class="text-4xl font-black mb-4 text-white" id="earn">₹0</h2>
             <div class="flex justify-between border-t border-slate-700 pt-4">
-                <div><p class="text-xs text-slate-400 font-bold uppercase">Delivered</p><p class="font-bold text-xl" id="delCount">0</p></div>
-                <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">Cash (COD)</p><p class="font-bold text-xl text-green-400" id="codTotal">₹0</p></div>
+                <div><p class="text-xs text-slate-400 font-bold uppercase">Delivered</p><p class="font-bold text-xl" id="cnt">0</p></div>
+                <div class="text-right"><p class="text-xs text-slate-400 font-bold uppercase">Cash (COD)</p><p class="font-bold text-xl text-green-400" id="cod">₹0</p></div>
             </div>
         </div>
 
-        <h3 class="font-bold text-lg mb-4 text-slate-300">Assigned Tasks</h3>
-        <div id="taskList" class="space-y-4">Loading tasks...</div>
+        <h3 class="font-bold text-lg mb-4 text-slate-300">My Tasks</h3>
+        <div id="tasks" class="space-y-4">Loading...</div>
     </div>
 
     <script>
-        // Init Rider Data Listeners
-        // 1. ACTIVE ORDERS
-        db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => {
-            let activeHtml = '';
-            
-            snap.forEach(doc => {
-                let o = doc.data();
-                let id = doc.id;
-                
-                // Show ONLY Accepted/Picked Up orders. Hide Pending or Delivered.
-                if(o.status === 'Pending' || o.status === 'Delivered') return; 
+        let me = null;
 
-                let btnAction = '';
-                if(o.status === 'Accepted') 
-                    btnAction = `<button onclick="updateStatus('${id}', 'Picked Up')" class="w-full bg-blue-600 py-3 rounded-xl font-bold mt-3 shadow-lg hover:bg-blue-500 transition">PICKUP ORDER</button>`;
-                else if(o.status === 'Picked Up') 
-                    btnAction = `<button onclick="updateStatus('${id}', 'Delivered')" class="w-full bg-green-500 py-3 rounded-xl font-bold mt-3 shadow-lg hover:bg-green-400 transition animate-pulse">MARK DELIVERED</button>`;
-
-                activeHtml += `
-                    <div class="bg-slate-800 p-5 rounded-[1.5rem] border border-slate-700 relative overflow-hidden">
-                        <div class="flex justify-between mb-2 items-start">
-                            <div>
-                                <h3 class="font-bold text-lg text-white">${o.customerName}</h3>
-                                <p class="text-sm text-slate-400">${o.address}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-orange-400 font-black text-lg block">₹${o.deliveryFee}</span>
-                                <span class="text-[10px] text-slate-500 uppercase font-bold">Earning</span>
-                            </div>
-                        </div>
-                        
-                        <div class="flex gap-2 mt-4">
-                            <span class="bg-slate-700/50 border border-slate-600 px-3 py-1 rounded-lg text-xs font-bold text-slate-300">COD: ₹${o.total}</span>
-                            <span class="bg-blue-500/20 border border-blue-500/50 text-blue-300 px-3 py-1 rounded-lg text-xs font-bold">${o.status}</span>
-                        </div>
-                        ${btnAction}
-                    </div>
-                `;
+        function login() {
+            let p = document.getElementById('lPhone').value, pass = document.getElementById('lPass').value;
+            db.collection('riders').where('phone', '==', p).where('pass', '==', pass).get().then(snap => {
+                if(!snap.empty) {
+                    me = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                    document.getElementById('login').classList.add('hidden');
+                    document.getElementById('dash').classList.remove('hidden');
+                    document.getElementById('rName').innerText = me.name;
+                    initRider();
+                } else alert("Invalid Login");
             });
-
-            document.getElementById('taskList').innerHTML = activeHtml || '<p class="text-slate-600 text-center py-10">No active deliveries</p>';
-        });
-
-        // 2. STATS (Completed Orders)
-        db.collection('orders').where('status', '==', 'Delivered').onSnapshot(snap => {
-            let earnings = 0;
-            let count = 0;
-            let cash = 0;
-            
-            snap.forEach(doc => {
-                let d = doc.data();
-                // In real app, filter by Date/RiderID here
-                earnings += parseInt(d.deliveryFee || 0);
-                cash += parseInt(d.total || 0);
-                count++;
-            });
-
-            document.getElementById('totalEarn').innerText = `₹${earnings}`;
-            document.getElementById('delCount').innerText = count;
-            document.getElementById('codTotal').innerText = `₹${cash}`;
-        });
-
-        function updateStatus(id, status) {
-            db.collection('orders').doc(id).update({ status: status });
         }
+
+        function initRider() {
+            // LISTENER: Orders
+            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => {
+                let html = '', earn = 0, count = 0, cod = 0;
+                
+                snap.forEach(doc => {
+                    let o = doc.data();
+                    
+                    // Filter: Only show orders related to THIS rider
+                    if(o.riderPhone !== me.phone) return;
+
+                    // STATS Logic
+                    if(o.status == 'Delivered') {
+                        earn += parseInt(o.deliveryFee || 0);
+                        cod += parseInt(o.total || 0);
+                        count++;
+                        return; // Hide completed tasks from list
+                    }
+
+                    // ACTIVE TASKS Logic
+                    let btn = '';
+                    if(o.status == 'Out for Delivery') btn = `<button onclick="upd('${doc.id}','Picked Up')" class="w-full bg-blue-600 py-3 rounded-xl font-bold mt-2 shadow-lg">PICKUP ORDER</button>`;
+                    else if(o.status == 'Picked Up') btn = `<button onclick="upd('${doc.id}','Delivered')" class="w-full bg-green-500 py-3 rounded-xl font-bold mt-2 shadow-lg animate-pulse">MARK DELIVERED</button>`;
+
+                    html += `
+                    <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700">
+                        <div class="flex justify-between mb-2">
+                            <h3 class="font-bold text-lg text-white">${o.customerName}</h3>
+                            <span class="text-orange-400 font-bold">Earn ₹${o.deliveryFee}</span>
+                        </div>
+                        <p class="text-sm text-slate-400 mb-3 bg-slate-900 p-2 rounded">${o.address}</p>
+                        <div class="flex gap-2 mb-3">
+                            <a href="tel:${o.customerPhone||''}" class="bg-slate-700 px-3 py-1 rounded text-xs font-bold text-white">Call</a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${o.address}" target="_blank" class="bg-slate-700 px-3 py-1 rounded text-xs font-bold text-blue-300">Map</a>
+                        </div>
+                        <div class="flex justify-between items-center text-xs font-bold">
+                            <span class="bg-slate-700 px-2 py-1 rounded text-slate-300">COD: ₹${o.total}</span>
+                            <span class="text-blue-400">${o.status}</span>
+                        </div>
+                        ${btn}
+                    </div>`;
+                });
+
+                document.getElementById('tasks').innerHTML = html || '<p class="text-center text-slate-500 mt-10">No active tasks</p>';
+                document.getElementById('earn').innerText = `₹${earn}`;
+                document.getElementById('cnt').innerText = count;
+                document.getElementById('cod').innerText = `₹${cod}`;
+            });
+        }
+
+        function upd(id, s) { db.collection('orders').doc(id).update({status: s}); }
     </script>
 </body>
 </html>
