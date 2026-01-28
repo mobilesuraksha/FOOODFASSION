@@ -19,6 +19,9 @@
         
         .nav-btn { animation: pulseGlow 2s infinite; }
         @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        
+        .sos-btn { animation: pulseRed 1.5s infinite; }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
     </style>
 </head>
 <body class="p-4 md:p-6 select-none">
@@ -46,7 +49,10 @@
                     <span class="text-[10px] text-green-400 font-bold uppercase tracking-wider flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online</span>
                 </div>
             </div>
-            <button onclick="location.reload()" class="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-xs font-bold border border-red-500/20 hover:bg-red-500/20">LOGOUT</button>
+            
+            <button onclick="toggleSOS()" class="bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg sos-btn border-2 border-red-400">
+                <i class="fas fa-shield-alt"></i>
+            </button>
         </div>
 
         <div class="glass p-6 rounded-[2rem] mb-6 relative overflow-hidden">
@@ -64,6 +70,46 @@
                 <i class="fas fa-satellite-dish fa-spin text-4xl mb-2"></i>
                 <p>Searching for orders...</p>
             </div>
+        </div>
+    </div>
+
+    <div id="sosModal" class="fixed inset-0 bg-slate-900/95 z-[999] hidden flex items-center justify-center p-6 backdrop-blur-md">
+        <div class="w-full max-w-sm bg-slate-800 p-6 rounded-[2rem] border border-slate-700 text-center relative slide-up">
+            <button onclick="toggleSOS()" class="absolute top-4 right-4 text-slate-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+            
+            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500 text-3xl animate-pulse">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white mb-2">Emergency Help</h2>
+            <p class="text-slate-400 text-xs mb-6">Click to call immediately</p>
+
+            <div class="space-y-3">
+                <a href="tel:112" class="flex items-center gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-700 hover:border-red-500 transition group">
+                    <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold"><i class="fas fa-taxi"></i></div>
+                    <div class="text-left">
+                        <h3 class="font-bold text-white group-hover:text-red-400">POLICE</h3>
+                        <p class="text-[10px] text-slate-400">Call 112 / 100</p>
+                    </div>
+                </a>
+
+                <a href="tel:102" class="flex items-center gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-700 hover:border-red-500 transition group">
+                    <div class="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold"><i class="fas fa-ambulance"></i></div>
+                    <div class="text-left">
+                        <h3 class="font-bold text-white group-hover:text-red-400">AMBULANCE</h3>
+                        <p class="text-[10px] text-slate-400">Call 102 / 108</p>
+                    </div>
+                </a>
+
+                <a href="https://wa.me/918468966897" class="flex items-center gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-700 hover:border-green-500 transition group">
+                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center text-white font-bold"><i class="fas fa-headset"></i></div>
+                    <div class="text-left">
+                        <h3 class="font-bold text-white group-hover:text-green-400">COMPANY SUPPORT</h3>
+                        <p class="text-[10px] text-slate-400">Help / Issue Reporting</p>
+                    </div>
+                </a>
+            </div>
+
+            <button onclick="location.reload()" class="mt-6 text-xs text-red-400 font-bold border-b border-red-400/30 pb-0.5">Logout / End Shift</button>
         </div>
     </div>
 
@@ -90,6 +136,12 @@
         let lastCount = 0;
         let allShops = []; 
         let currentLat = 0, currentLng = 0;
+
+        // --- TOGGLE SOS MODAL ---
+        window.toggleSOS = () => {
+            const el = document.getElementById('sosModal');
+            el.classList.toggle('hidden');
+        }
 
         // --- GET RIDER LIVE LOCATION (For Distance Calc) ---
         if(navigator.geolocation) {
