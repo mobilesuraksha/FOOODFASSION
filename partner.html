@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+    <style>body{font-family:'Outfit',sans-serif;background:#f8fafc;}</style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="login" class="fixed inset-0 bg-white z-50 flex items-center justify-center p-6">
+        <div class="w-full max-w-sm text-center">
+            <h2 class="text-3xl font-black mb-6 text-orange-600 tracking-tighter">PARTNER LOGIN</h2>
+            <input id="lPhone" type="number" placeholder="Registered Mobile" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-3 font-bold bg-slate-50 outline-none">
+            <input id="lPass" type="password" placeholder="Password (From Admin)" class="border-2 border-slate-100 p-4 rounded-2xl w-full mb-6 font-bold bg-slate-50 outline-none">
+            <button id="loginBtn" class="bg-orange-600 text-white w-full py-4 rounded-2xl font-bold shadow-xl hover:scale-105 transition">ENTER DASHBOARD</button>
+        </div>
+    </div>
+
+    <div id="dash" class="hidden max-w-lg mx-auto pb-20">
+        <div class="flex justify-between items-center mb-8">
+            <div><h1 class="text-2xl font-black text-slate-800" id="sName">Shop</h1><p class="text-xs text-slate-400 font-bold">Partner Dashboard</p></div>
+            <button onclick="location.reload()" class="text-red-500 text-xs font-bold border border-red-100 px-4 py-2 rounded-xl hover:bg-red-50">LOGOUT</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 mb-8 border border-slate-50">
+            <h3 class="font-black text-lg mb-4 flex items-center gap-2 text-slate-700">Add Menu Item</h3>
+            <div class="space-y-3">
+                <input id="pName" placeholder="Item Name" class="w-full border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none">
+                <div class="flex gap-3">
+                    <input id="pPrice" type="number" placeholder="Price" class="w-1/3 border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none">
+                    <input id="pImg" type="file" class="w-2/3 border p-3 rounded-xl text-xs bg-slate-50">
+                </div>
+                <select id="pCat" class="w-full border p-3 rounded-xl text-sm font-bold bg-slate-50 outline-none"><option>Food</option><option>Fashion</option><option>Mobile</option></select>
+                <button id="addProdBtn" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm shadow-lg">ADD TO MENU</button>
+            </div>
+        </div>
+
+        <h3 class="font-black text-xl mb-4 text-slate-800">Incoming Orders</h3>
+        <div id="orders" class="space-y-4"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCwyzE9sdZZUU3dHUix23zEzFkGr2nNRyw",
+            authDomain: "foodhub-8ae15.firebaseapp.com",
+            projectId: "foodhub-8ae15",
+            storageBucket: "foodhub-8ae15.firebasestorage.app",
+            messagingSenderId: "274265160043",
+            appId: "1:274265160043:web:81238fd424681e7f70342e",
+            measurementId: "G-00YX8EM4L7"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        let me = null;
+
+        document.getElementById('loginBtn').onclick = async () => {
+            let p = document.getElementById('lPhone').value, pass = document.getElementById('lPass').value;
+            const q = query(collection(db, "shops"), where("phone", "==", p), where("pass", "==", pass));
+            const snap = await getDocs(q);
+            
+            if(!snap.empty) {
+                me = { id: snap.docs[0].id, ...snap.docs[0].data() };
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('dash').classList.remove('hidden');
+                document.getElementById('sName').innerText = me.shopName;
+                startListening();
+            } else alert("Invalid Credentials");
+        };
+
+        document.getElementById('addProdBtn').onclick = () => {
+            let name=document.getElementById('pName').value, price=document.getElementById('pPrice').value, cat=document.getElementById('pCat').value;
+            let file = document.getElementById('pImg').files[0];
+
+            if(!name || !price || !file) return alert("Fill details");
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function() {
+                try {
+                    await addDoc(collection(db, "products"), {
+                        shopId: me.id, name, price, cat, img: reader.result
+                    });
+                    alert("Added!");
+                    document.getElementById('pName').value = "";
+                } catch(e) { alert("Error: Image likely too big."); }
+            };
+        };
+
+        function startListening() {
+            const q = query(collection(db, "orders"), where("shopId", "==", me.id));
+            onSnapshot(q, (snap) => {
+                let orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                // Sort Pending first
+                orders.sort((a,b) => (a.status === 'Pending' ? -1 : 1));
+                renderOrders(orders);
+            });
+        }
+
+        function renderOrders(orders) {
+            document.getElementById('orders').innerHTML = orders.map(o => {
+                let btn = '';
+                if(o.status=='Pending') btn=`<button onclick="window.sts('${o.id}','Preparing')" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg">ACCEPT & COOK</button>`;
+                else if(o.status=='Preparing') btn=`<button onclick="window.sts('${o.id}','Accepted')" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold text-xs mt-3 shadow-lg animate-pulse">FOOD READY</button>`;
+                else btn=`<div class="mt-3 text-center text-xs font-bold text-slate-400 bg-slate-100 py-2 rounded-xl">Status: ${o.status}</div>`;
+
+                return `
+                <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-lg mb-4">
+                    <div class="flex justify-between items-center mb-3 border-b border-slate-50 pb-2">
+                        <span class="font-black text-slate-700 text-lg">#${o.id.substr(0,5)}</span>
+                        <span class="text-green-600 font-black text-lg">₹${o.total}</span>
+                    </div>
+                    <div class="text-sm font-bold text-slate-600 bg-slate-50 p-3 rounded-xl mb-2">${o.items.map(x=>`${x.qty}x ${x.name}`).join('<br>')}</div>
+                    ${btn}
+                </div>`;
+            }).join('') || '<div class="text-center py-10 opacity-50"><p>No orders yet</p></div>';
+        }
+
+        window.sts = async (oid, s) => {
+            await updateDoc(doc(db, "orders", oid), { 
+                status: s,
+                timeline: arrayUnion({ status: s, msg: `Shop: ${s}`, time: new Date().toLocaleTimeString() })
+            });
+        };
+
+    </script>
+</body>
+</html>
