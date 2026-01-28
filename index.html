@@ -17,8 +17,6 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .loader-fade { animation: fadeOut 0.5s ease-out forwards; animation-delay: 1.5s; }
         @keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
-        .shake { animation: shake 0.5s; }
-        @keyframes shake { 0%{transform: rotate(0deg);} 25%{transform: rotate(15deg);} 50%{transform: rotate(0deg);} 75%{transform: rotate(-15deg);} 100%{transform: rotate(0deg);} }
     </style>
 </head>
 <body class="bg-slate-50 select-none text-slate-800">
@@ -103,7 +101,7 @@
             <div id="shopsRail" class="flex gap-4 overflow-x-auto hide-scroll pb-2"></div>
         </div>
 
-        <div class="px-4 mt-4 pb-24">
+        <div class="px-4 mt-4 pb-4">
             <h3 class="font-bold text-slate-800 mb-3 text-lg" id="gridTitle">Recommended</h3>
             <main id="productGrid" class="grid grid-cols-2 md:grid-cols-3 gap-4"></main>
         </div>
@@ -114,6 +112,29 @@
         <div id="historyList" class="space-y-4"></div>
     </div>
 
+    <footer class="bg-slate-900 text-white rounded-t-[2.5rem] mt-12 pt-12 pb-32 relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-1 bg-orange-500 blur-[30px]"></div>
+        <div class="px-8 text-center relative z-10">
+            <div class="flex justify-center items-center gap-2 mb-3">
+                <div class="bg-orange-500 text-white w-8 h-8 rounded-lg flex items-center justify-center font-black italic">F</div>
+                <h2 class="text-3xl font-black italic tracking-tighter">F-Store</h2>
+            </div>
+            <p class="text-slate-400 text-xs mb-8 max-w-xs mx-auto">Delivering happiness to your doorstep.</p>
+            <div class="border-t border-slate-800 pt-8">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Partner Access</p>
+                <div class="flex flex-wrap justify-center gap-3 mb-6">
+                    <a href="admin.html" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-700 transition">Admin</a>
+                    <a href="partner.html" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-700 transition">Shop</a>
+                    <a href="delivery.html" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-700 transition">Rider</a>
+                </div>
+                <button onclick="document.getElementById('shopReqModal').classList.remove('hidden')" class="w-full max-w-xs mx-auto text-xs font-bold text-orange-500 border border-orange-500/20 px-5 py-3 rounded-full hover:bg-orange-500/10 transition flex items-center justify-center gap-2">
+                    <i class="fas fa-store"></i> Register Your Restaurant / Shop
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-600 font-bold mt-8">© 2026 F-Store Inc. All rights reserved.</p>
+        </div>
+    </footer>
+
     <div id="cartModal" class="fixed inset-0 bg-slate-900/80 hidden z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] p-6 max-h-[90vh] overflow-y-auto slide-up shadow-2xl">
             <div class="flex justify-between items-center mb-6">
@@ -121,11 +142,22 @@
                 <button onclick="document.getElementById('cartModal').classList.add('hidden')" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
             <div id="cartList" class="space-y-4 mb-6"></div>
+            
             <div class="border-t pt-4 space-y-3">
-                <input id="orderName" placeholder="Name" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-bold border">
-                <input id="orderPhone" placeholder="Phone" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-bold border">
-                <textarea id="cAddr" placeholder="Address" class="w-full bg-slate-50 p-3 rounded-xl text-xs font-bold border"></textarea>
-                <button id="placeOrderBtn" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl">PLACE ORDER <span id="totalPrice"></span></button>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Delivery Details</p>
+                <input id="orderName" placeholder="Your Name" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border outline-none focus:border-orange-500">
+                <input id="orderPhone" placeholder="Mobile Number" type="number" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border outline-none focus:border-orange-500">
+                
+                <button onclick="window.getLocation()" id="locBtn" class="w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-blue-100 hover:bg-blue-100 transition">
+                    <i class="fas fa-location-crosshairs text-lg animate-pulse"></i> Detect Live Location (GPS)
+                </button>
+                
+                <textarea id="cAddr" placeholder="Full Address (House No, Area, Landmark)" class="w-full bg-slate-50 p-3 rounded-xl text-sm font-bold border outline-none focus:border-orange-500 h-20"></textarea>
+                
+                <button id="placeOrderBtn" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl mt-2 flex justify-between px-6">
+                    <span>PLACE ORDER</span>
+                    <span id="totalPrice">₹0</span>
+                </button>
             </div>
         </div>
     </div>
@@ -174,6 +206,11 @@
         window.shops = [];
         window.cart = JSON.parse(localStorage.getItem('f_temp_cart')) || [];
         window.user = JSON.parse(localStorage.getItem('f_user'));
+        
+        // Location Globals
+        window.userLat = null;
+        window.userLng = null;
+
         let filterShopId = null;
         let filterCatName = 'All';
 
@@ -189,33 +226,50 @@
             }
         };
 
-        // --- REALTIME LISTENERS ---
-        // 1. Get Shops
+        // --- LOCATION FUNCTION ---
+        window.getLocation = () => {
+            let btn = document.getElementById('locBtn');
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Detecting...`;
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        window.userLat = position.coords.latitude;
+                        window.userLng = position.coords.longitude;
+                        btn.innerHTML = `<i class="fas fa-check-circle"></i> Location Saved ✓`;
+                        btn.className = "w-full py-3 bg-green-50 text-green-600 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-green-200";
+                    },
+                    (error) => {
+                        btn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Permission Denied`;
+                        alert("Please enable location services or type address manually.");
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // --- DATA LOADERS ---
         onSnapshot(collection(db, "shops"), (snap) => {
             window.shops = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderShops();
-            renderProducts(); // Re-render if shop name changes
         });
 
-        // 2. Get Products
         onSnapshot(collection(db, "products"), (snap) => {
             window.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             renderProducts();
         });
 
-        // 3. Get User Orders (If Logged In)
         if(window.user) {
             const q = query(collection(db, "orders"), where("customer.phone", "==", window.user.phone));
             onSnapshot(q, (snap) => {
                 let myOrders = snap.docs.map(d => ({id:d.id, ...d.data()}));
-                // Sort client side for simplicity
                 myOrders.sort((a,b) => b.id.localeCompare(a.id)); 
                 renderHistory(myOrders);
                 checkNotifications(myOrders);
             });
         }
 
-        // --- RENDER FUNCTIONS ---
         function renderShops() {
             document.getElementById('shopsRail').innerHTML = window.shops.map(s => 
                 `<div onclick="window.filterShop('${s.id}')" class="min-w-[100px] bg-white p-3 rounded-2xl border border-slate-100 shadow-sm text-center cursor-pointer card-tap">
@@ -254,17 +308,8 @@
             document.getElementById('cartCount').innerText = window.cart.reduce((a, b) => a + b.qty, 0);
         }
 
-        // --- EXPORTED FUNCTIONS TO WINDOW ---
         window.filterShop = (id) => { filterShopId = id; document.getElementById('gridTitle').innerText = id ? "Shop Menu" : "Recommended"; renderProducts(); };
-        window.filterCat = (c) => { 
-            filterCatName = c; 
-            ['All','Food','Fashion','Mobile'].forEach(x => { 
-                let btn = document.getElementById('cat-'+x);
-                if(x==c) btn.className = "px-6 py-2.5 rounded-xl text-xs font-bold active-cat transition";
-                else btn.className = "bg-white border px-6 py-2.5 rounded-xl text-xs font-bold transition";
-            });
-            renderProducts(); 
-        };
+        window.filterCat = (c) => { filterCatName = c; renderProducts(); };
 
         window.modQty = (id, c) => {
             let i = window.cart.find(x => x.id == id);
@@ -283,19 +328,24 @@
             document.getElementById('cartModal').classList.remove('hidden');
         };
 
+        // --- ORDER PLACE WITH LOCATION ---
         document.getElementById('placeOrderBtn').onclick = async () => {
-            let name = document.getElementById('orderName').value, phone = document.getElementById('orderPhone').value, addr = document.getElementById('cAddr').value;
-            if (!name || !phone || !addr) return alert("Fill all details");
+            let name = document.getElementById('orderName').value;
+            let phone = document.getElementById('orderPhone').value;
+            let addr = document.getElementById('cAddr').value;
             
-            // Group by Shop
+            if (!name || !phone || !addr) return alert("Please fill Name, Mobile and Address.");
+            
+            // Check if Location detected
+            if (!window.userLat || !window.userLng) {
+                if(!confirm("Warning: Live Location not detected. Rider will rely only on written address. Continue?")) return;
+            }
+
             let shopGroups = {};
             window.cart.forEach(i => { if (!shopGroups[i.shopId]) shopGroups[i.shopId] = []; shopGroups[i.shopId].push(i) });
 
             try {
-                // Get Global Settings for delivery fee
-                // Ideally perform this server side or read from a settings doc
                 let baseFee = 20; 
-
                 for (let sid in shopGroups) {
                     let items = shopGroups[sid];
                     let itemTotal = items.reduce((a, b) => a + (b.price * b.qty), 0);
@@ -303,14 +353,20 @@
 
                     await addDoc(collection(db, "orders"), {
                         shopId: sid,
-                        customer: { name, phone, addr },
+                        customer: { 
+                            name: name, 
+                            phone: phone, 
+                            addr: addr,
+                            lat: window.userLat, // SENDING LAT
+                            lng: window.userLng  // SENDING LNG
+                        },
                         items: items,
                         total: total,
                         deliveryFee: baseFee,
                         status: 'Pending',
                         riderPhone: null,
                         date: new Date().toLocaleString(),
-                        timestamp: Date.now(), // for sorting
+                        timestamp: Date.now(),
                         timeline: [{ status: 'Pending', msg: 'Order Placed', time: new Date().toLocaleTimeString() }]
                     });
                 }
@@ -322,11 +378,10 @@
                 toast.style.opacity = 1; setTimeout(()=>toast.style.opacity=0, 3000);
             } catch (e) {
                 console.error(e);
-                alert("Error placing order: " + e.message);
+                alert("Error: " + e.message);
             }
         };
 
-        // --- OTHER UTILS ---
         window.view = (v) => {
             document.getElementById('view-home').style.display = v == 'home' ? 'block' : 'none';
             document.getElementById('view-hist').style.display = v == 'hist' ? 'block' : 'none';
@@ -348,35 +403,22 @@
         }
 
         function checkNotifications(orders) {
-            // Simple logic: if timeline length changed, show dot
             let notifs = [];
-            orders.forEach(o => {
-                if(o.timeline) o.timeline.forEach(t => notifs.push({ ...t, oid: o.id }));
-            });
-            notifs.reverse(); // Newest first
+            orders.forEach(o => { if(o.timeline) o.timeline.forEach(t => notifs.push({ ...t, oid: o.id })); });
+            notifs.reverse();
             document.getElementById('notifList').innerHTML = notifs.map(n => `<div class="bg-slate-50 p-3 rounded-lg text-xs"><p class="font-bold">${n.msg}</p><p class="text-gray-400">Order #${n.oid.substr(0,5)} • ${n.time}</p></div>`).join('');
             document.getElementById('cartCount').innerText = window.cart.reduce((a,b)=>a+b.qty,0);
         }
 
-        // Shop Request
         document.getElementById('sendShopReqBtn').onclick = async () => {
-            let req = {
-                shopName: document.getElementById('reqName').value,
-                owner: document.getElementById('reqOwner').value,
-                phone: document.getElementById('reqPhone').value,
-                bio: document.getElementById('reqBio').value,
-                status: 'Pending'
-            };
+            let req = { shopName: document.getElementById('reqName').value, owner: document.getElementById('reqOwner').value, phone: document.getElementById('reqPhone').value, bio: document.getElementById('reqBio').value, status: 'Pending' };
             if(!req.phone) return alert("Fill required fields");
             await addDoc(collection(db, "shop_requests"), req);
             alert("Request Sent!"); document.getElementById('shopReqModal').classList.add('hidden');
         };
 
         document.getElementById('search').addEventListener('input', renderProducts);
-        
-        // Hide loader
         setTimeout(()=>document.getElementById('appLoader').style.display='none', 1000);
-
     </script>
 </body>
 </html>
