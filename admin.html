@@ -136,7 +136,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, onSnapshot, query, where, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG (Must match Index.html) ---
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyCwyzE9sdZZUU3dHUix23zEzFkGr2nNRyw",
             authDomain: "foodhub-8ae15.firebaseapp.com",
@@ -161,7 +161,7 @@
             if(pin === 'PASSWORD123'){ 
                 document.getElementById('login').classList.add('hidden'); 
                 document.getElementById('dash').classList.remove('hidden'); 
-                initListeners(); // Start receiving data only after login
+                initListeners(); 
             } else {
                 alert("Wrong PIN"); 
             }
@@ -169,24 +169,20 @@
 
         // --- DATA LISTENERS ---
         function initListeners() {
-            console.log("Connecting to Firestore...");
-
             // 1. ORDERS LISTENER
             onSnapshot(collection(db, "orders"), (snap) => {
                 orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 
-                // Sort: Pending first, then by timestamp
+                // Sort
                 orders.sort((a,b) => {
                     if(a.status === 'Pending' && b.status !== 'Pending') return -1;
                     if(a.status !== 'Pending' && b.status === 'Pending') return 1;
                     return (b.timestamp || 0) - (a.timestamp || 0);
                 });
 
-                // Alert Sound for New Pending Orders
+                // Audio Alert
                 let pendingCount = orders.filter(o => o.status === 'Pending').length;
-                if(pendingCount > lastOrderCount) {
-                    alertAudio.play().catch(e => console.log("Audio play failed"));
-                }
+                if(pendingCount > lastOrderCount) alertAudio.play().catch(e=>{});
                 lastOrderCount = pendingCount;
 
                 renderOrders();
@@ -196,14 +192,13 @@
             onSnapshot(collection(db, "riders"), (snap) => {
                 riders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderRiders();
-                renderOrders(); // Re-render orders to update dropdowns
+                renderOrders(); 
             });
 
             // 3. SHOPS
             onSnapshot(collection(db, "shops"), (snap) => {
                 shops = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderShops();
-                // Update Shop Select in Products Form
                 let sSelect = document.getElementById('pShop');
                 sSelect.innerHTML = `<option value="">Select Shop</option>` + shops.map(s => `<option value="${s.id}">${s.shopName}</option>`).join('');
             });
@@ -231,12 +226,19 @@
                 let sName = shops.find(s => s.id == o.shopId)?.shopName || 'Unknown Shop';
                 let riderOpts = riders.map(r => `<option value="${r.phone}">${r.name}</option>`).join('');
                 
-                let cardColor = "border-l-4 border-slate-200"; // Default
+                // --- SAFE CHECKS FOR CUSTOMER DATA ---
+                // Agar customer data missing hai to crash na ho
+                let cName = o.customer ? o.customer.name : 'Unknown User';
+                let cPhone = o.customer ? o.customer.phone : '-';
+                let cAddr = o.customer ? o.customer.addr : 'No Address';
+                let hasGPS = (o.customer && o.customer.lat && o.customer.lng);
+
+                let cardColor = "border-l-4 border-slate-200"; 
                 let actionUI = '';
 
                 // --- STATUS LOGIC ---
                 if(o.status === 'Pending') {
-                    cardColor = "border-l-4 border-red-500 bg-red-50"; // Highlight Pending
+                    cardColor = "border-l-4 border-red-500 bg-red-50"; 
                     actionUI = `
                         <div class="flex flex-col gap-2 w-full">
                             <p class="text-xs text-red-500 font-bold blink">Waiting for Approval</p>
@@ -246,7 +248,7 @@
                         </div>
                     `;
                 } else if(o.status === 'Approved' || o.status === 'Preparing' || o.status === 'Accepted') {
-                    cardColor = "border-l-4 border-green-500 bg-green-50"; // Highlight Ready/Approved
+                    cardColor = "border-l-4 border-green-500 bg-green-50";
                     actionUI = `
                         <div class="flex flex-col gap-2 w-full">
                             <p class="text-xs text-green-600 font-bold">Approved. Assign Rider.</p>
@@ -262,12 +264,11 @@
                         </div>
                     `;
                 } else {
-                    // Out for Delivery / Delivered
                     actionUI = `<span class="bg-slate-200 text-slate-600 px-3 py-2 rounded-lg text-xs font-bold block text-center w-full">${o.status} <br> <span class="text-[10px]">Rider: ${o.riderName||'-'}</span></span>`;
                 }
 
-                // Location Check
-                let locBadge = (o.customer.lat && o.customer.lng) ? 
+                // Location Check Badge
+                let locBadge = hasGPS ? 
                     `<span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold"><i class="fas fa-location-arrow"></i> GPS</span>` : 
                     `<span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-bold">Addr Only</span>`;
 
@@ -281,9 +282,9 @@
                         <p class="text-sm font-bold text-blue-600 mb-1"><i class="fas fa-store"></i> ${sName}</p>
                         
                         <div class="bg-white/50 p-2 rounded-lg mb-2">
-                            <p class="text-sm font-bold text-slate-700 flex items-center gap-2">${o.customer.name} ${locBadge}</p>
-                            <p class="text-xs text-slate-500">${o.customer.phone}</p>
-                            <p class="text-xs text-slate-500 italic">${o.customer.addr}</p>
+                            <p class="text-sm font-bold text-slate-700 flex items-center gap-2">${cName} ${locBadge}</p>
+                            <p class="text-xs text-slate-500">${cPhone}</p>
+                            <p class="text-xs text-slate-500 italic">${cAddr}</p>
                         </div>
 
                         <div class="flex gap-4 text-xs font-black">
@@ -311,56 +312,32 @@
         }
 
         // --- GLOBAL ACTIONS ---
-        
-        // 1. APPROVE ORDER (Pending -> Approved)
         window.approveOrder = async (oid) => {
-            try {
-                await updateDoc(doc(db, "orders", oid), { 
-                    status: 'Approved' // Matches what Shop app sees to start cooking
-                });
-            } catch(e) { console.error(e); alert("Error updating: " + e.message); }
+            try { await updateDoc(doc(db, "orders", oid), { status: 'Approved' }); } catch(e) { console.error(e); }
         };
 
-        // 2. ASSIGN RIDER (Approved -> Out for Delivery)
         window.assignRider = async (oid) => {
             let p = document.getElementById(`asn-${oid}`).value;
-            if(!p) return alert("Please Select a Rider from the list");
-            
+            if(!p) return alert("Select Rider");
             let r = riders.find(x => x.phone == p);
-            
-            try {
-                await updateDoc(doc(db, "orders", oid), { 
-                    status: 'Out for Delivery', 
-                    riderPhone: p, 
-                    riderName: r.name 
-                });
-                alert(`Assigned to ${r.name}`);
-            } catch(e) { console.error(e); alert("Error assigning: " + e.message); }
+            try { await updateDoc(doc(db, "orders", oid), { status: 'Out for Delivery', riderPhone: p, riderName: r.name }); alert(`Assigned to ${r.name}`); } catch(e) { alert("Error: "+e.message); }
         };
 
-        // Other Actions
         window.delOrd = async (id) => { if(confirm("Delete Order?")) await deleteDoc(doc(db, "orders", id)); };
         window.delShop = async (id) => { if(confirm("Delete Shop?")) await deleteDoc(doc(db, "shops", id)); };
         window.delRid = async (id) => { if(confirm("Delete Rider?")) await deleteDoc(doc(db, "riders", id)); };
         
-        // Add Rider
         document.getElementById('addRiderBtn').onclick = async () => {
             let n = document.getElementById('rName').value, p = document.getElementById('rPhone').value, ps = document.getElementById('rPass').value;
-            if(n && p && ps) { 
-                await addDoc(collection(db, "riders"), { name: n, phone: p, pass: ps }); 
-                document.getElementById('rName').value=''; 
-                alert("Rider Added"); 
-            }
+            if(n && p && ps) { await addDoc(collection(db, "riders"), { name: n, phone: p, pass: ps }); document.getElementById('rName').value=''; alert("Rider Added"); }
         };
 
-        // View Switcher
         window.view = (v) => {
              ['ord','rid','prod','req','set'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('btn-'+x).className="px-6 py-3 rounded-xl font-bold text-xs whitespace-nowrap transition bg-white border hover:bg-slate-50 text-slate-500"; });
              document.getElementById('view-'+v).classList.remove('hidden');
              document.getElementById('btn-'+v).className = "px-6 py-3 rounded-xl font-bold text-xs whitespace-nowrap transition active-tab shadow-lg transform scale-105";
         }
 
-        // Rendering helpers for other tabs
         function renderShops() { document.getElementById('shopList').innerHTML = shops.map(s => `<div class="glass p-4 rounded-[1.5rem] border relative"><h4 class="font-black text-slate-800">${s.shopName}</h4><p class="text-xs text-slate-500 font-bold">Pass: ${s.pass}</p><button onclick="window.delShop('${s.id}')" class="absolute top-4 right-4 text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button></div>`).join(''); }
         function renderProducts() { document.getElementById('allProdList').innerHTML = products.map(p => `<div class="glass p-3 rounded-2xl relative text-center"><p class="font-bold text-xs">${p.name}</p><p class="text-xs text-orange-600">₹${p.price}</p></div>`).join(''); }
         function renderReqs() { document.getElementById('reqList').innerHTML = reqs.map((r) => `<div class="glass p-5 rounded-[1.5rem] border-l-4 border-yellow-400"><h3 class="font-black text-lg text-slate-800">${r.shopName}</h3><div class="flex gap-2 mt-2"><input id="pass-${r.id}" placeholder="Set Pass" class="border p-1 w-20 text-xs"><button onclick="window.approveReq('${r.id}')" class="bg-green-500 text-white px-2 rounded text-xs">✓</button></div></div>`).join(''); }
@@ -373,7 +350,6 @@
             await deleteDoc(doc(db, "shop_requests", rid));
         };
         
-        // Product Saving
         document.getElementById('saveProdBtn').onclick = () => {
             let name = document.getElementById('pName').value, price = document.getElementById('pPrice').value, shopId = document.getElementById('pShop').value, cat = document.getElementById('pCat').value;
             let file = document.getElementById('pImgFile').files[0];
