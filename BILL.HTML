@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAM KISHAN'S | A4 Invoice</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        :root { --primary: #1e3a8a; --light: #e5e7eb; --border-color: #000; }
+        body { font-family: 'Roboto', sans-serif; margin: 0; background: #555; display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- SIDEBAR (Screen Only) --- */
+        aside { width: 240px; background: #111827; color: white; display: flex; flex-direction: column; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); z-index: 10; }
+        .brand { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #374151; padding-bottom: 20px; }
+        .brand h2 { color: #fbbf24; margin: 0; font-size: 18px; text-transform: uppercase; }
+        nav button { background: transparent; border: none; color: #9ca3af; width: 100%; padding: 12px; text-align: left; font-size: 15px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        nav button:hover, nav button.active { background: #374151; color: white; }
+
+        /* --- MAIN AREA --- */
+        main { flex: 1; padding: 30px; overflow-y: auto; display: flex; justify-content: center; }
+        .tab-section { display: none; width: 100%; }
+        .tab-section.active { display: block; }
+
+        /* --- A4 PAPER CONTAINER --- */
+        .paper-a4 {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 10mm; /* Internal Padding */
+            margin: auto;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* --- TALLY STYLE BORDERS --- */
+        .tally-box { border: 2px solid var(--border-color); color: #000; font-size: 12px; height: 100%; display: flex; flex-direction: column; }
+        
+        .header-title { text-align: center; font-weight: bold; padding: 4px; border-bottom: 1px solid var(--border-color); background: #eee; -webkit-print-color-adjust: exact; font-size: 14px; }
+        
+        .shop-details { padding: 10px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        .shop-details h1 { margin: 0; font-size: 28px; text-transform: uppercase; font-weight: 900; line-height: 1.2; }
+
+        .row-flex { display: flex; border-bottom: 1px solid var(--border-color); }
+        .col-half { width: 50%; padding: 5px 8px; border-right: 1px solid var(--border-color); }
+        .col-half:last-child { border-right: none; }
+
+        /* TABLE STRUCTURE */
+        .table-container { flex: 1; } /* Takes remaining height */
+        .tally-table { width: 100%; border-collapse: collapse; }
+        .tally-table th { border-bottom: 1px solid var(--border-color); border-right: 1px solid var(--border-color); padding: 5px; background: white; font-size: 12px; font-weight: bold; text-align: center; }
+        .tally-table td { border-right: 1px solid var(--border-color); padding: 5px; font-size: 13px; vertical-align: top; }
+        .tally-table td:last-child, .tally-table th:last-child { border-right: none; }
+        
+        /* FOOTER STRUCTURE */
+        .footer-section { border-top: 1px solid var(--border-color); display: flex; }
+        .left-part { flex: 1; border-right: 1px solid var(--border-color); padding: 5px 10px; display: flex; flex-direction: column; justify-content: space-between; }
+        .right-part { width: 220px; }
+
+        .total-row { display: flex; justify-content: space-between; padding: 3px 5px; font-size: 13px; }
+        .grand-total { border-top: 1px solid var(--border-color); padding: 8px 5px; font-weight: bold; font-size: 16px; display: flex; justify-content: space-between; background: #eee; -webkit-print-color-adjust: exact; }
+
+        .signatory { height: 70px; border-top: 1px solid var(--border-color); padding: 5px; text-align: right; display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; }
+
+        /* INPUTS (Invisible look) */
+        input, select, textarea { width: 100%; padding: 2px; border: 1px dashed #ccc; font-family: inherit; font-size: 13px; box-sizing: border-box; background: rgba(255,255,0,0.05); }
+        input:focus { border-color: blue; outline: none; background: #fff; }
+        .btn-group { padding: 15px; position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; background: white; border-radius: 50px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 100; }
+        .btn { padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 30px; color: white; display: flex; align-items: center; gap: 8px; }
+        .btn-save { background: #1e3a8a; }
+        .btn-print { background: #059669; }
+        .btn-clear { background: #dc2626; }
+
+        /* HISTORY TABLE */
+        .history-wrapper { background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 800px; margin: auto; }
+
+        /* --- PRINT SETTINGS (A4 STRICT) --- */
+        @media print {
+            @page { size: A4; margin: 0; } /* Remove browser margins */
+            body { background: white; height: auto; display: block; }
+            aside, .btn-group, .no-print { display: none !important; }
+            main { padding: 0; display: block; }
+            
+            .paper-a4 {
+                width: 100%; height: 100%; 
+                box-shadow: none; margin: 0; 
+                padding: 10mm; /* Safe print margin */
+                min-height: 297mm; /* Force full A4 height */
+            }
+            
+            input, select, textarea { border: none !important; background: transparent !important; resize: none; padding: 0; margin: 0; font-weight: 500; color: black; }
+            select { appearance: none; -webkit-appearance: none; text-align: right; }
+            ::placeholder { color: transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="no-print">
+        <div class="brand">
+            <h2>RAM KISHAN'S</h2>
+            <span>SYSTEM</span>
+        </div>
+        <nav>
+            <button class="active" onclick="switchTab('billing')"><i class="fas fa-file-invoice"></i> Create Bill</button>
+            <button onclick="switchTab('history')"><i class="fas fa-history"></i> History</button>
+        </nav>
+    </aside>
+
+    <main>
+        <section id="billing" class="tab-section active">
+            
+            <div class="paper-a4">
+                <div class="tally-box">
+                    
+                    <div class="header-title">TAX INVOICE / CASH MEMO</div>
+                    
+                    <div class="shop-details">
+                        <h1>RAM KISHAN'S</h1>
+                        <p style="margin:2px 0; font-weight:bold; font-size:14px;">SWEETS & RESTAURANT</p>
+                        <p style="margin:0; font-size:12px;">Bahalgarh Road, Sonipat, Haryana | <strong>Mo: 705693111</strong></p>
+                    </div>
+
+                    <div class="row-flex">
+                        <div class="col-half">
+                            <div style="font-size:11px; font-weight:bold; text-decoration:underline; margin-bottom:5px;">Buyer / Bill To:</div>
+                            <input type="text" id="custName" placeholder="Customer Name" style="font-weight:bold; font-size:15px; margin-bottom:2px;">
+                            <input type="text" id="custPhone" placeholder="Mobile Number">
+                            <textarea id="custAddr" rows="1" placeholder="Address (Optional)" style="margin-top:2px;"></textarea>
+                        </div>
+                        <div class="col-half">
+                            <div class="total-row"><span>Invoice No:</span> <input type="text" id="invoiceNo" style="width:80px; text-align:right; font-weight:bold;" readonly></div>
+                            <div class="total-row"><span>Date:</span> <input type="date" id="billDate" style="width:110px; text-align:right;"></div>
+                            <div class="total-row"><span>Pay Mode:</span> <select id="payMode" style="width:80px; text-align:right;"><option>Cash</option><option>UPI</option><option>Card</option><option>Credit</option></select></div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="tally-table">
+                            <thead>
+                                <tr>
+                                    <th width="8%">SI</th>
+                                    <th width="50%" style="text-align:left;">Description of Goods</th>
+                                    <th width="12%">Qty</th>
+                                    <th width="15%">Rate</th>
+                                    <th width="15%">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billBody">
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div class="footer-section">
+                        <div class="left-part">
+                            <div>
+                                <div style="font-size:11px; color:#555;">Amount in words:</div>
+                                <div id="amtWords" style="font-weight:bold; margin-top:3px; font-style:italic;">Zero Only</div>
+                            </div>
+                            <div style="margin-top:15px; font-size:10px;">
+                                <strong>Terms & Conditions:</strong>
+                                <ul style="margin:2px 0; padding-left:15px;">
+                                    <li>Goods once sold will not be taken back.</li>
+                                    <li>All disputes subject to Sonipat Jurisdiction.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="right-part">
+                            <div class="total-row"><span>Sub Total:</span> <span id="subTotal">0.00</span></div>
+                            <div class="total-row">
+                                <span>GST: <select id="gstMode" class="no-print" onchange="calc()" style="width:40px; font-size:10px;"><option value="none">None</option><option value="inclusive">Inc</option><option value="exclusive">Exc</option></select></span> 
+                                <span id="gstVal">0.00</span>
+                            </div>
+                            <div class="grand-total"><span>Total:</span> <span>₹ <span id="grandTotal">0.00</span></span></div>
+                            
+                            <div style="padding:5px; border-bottom:1px solid #000; background:#f9f9f9;">
+                                <div class="total-row">
+                                    <span>Received:</span> 
+                                    <input type="number" id="paidAmt" value="0" oninput="calc()" style="width:70px; text-align:right; font-weight:bold; border-bottom:1px dashed #000;">
+                                </div>
+                                <div class="total-row" style="margin-top:2px;">
+                                    <span>Balance:</span> 
+                                    <span id="balanceDue" style="font-weight:bold; color:#d32f2f;">0.00</span>
+                                </div>
+                            </div>
+
+                            <div class="signatory">
+                                <div>For RAM KISHAN'S</div>
+                                <div>Auth. Signatory</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="btn-group no-print">
+                <button class="btn btn-save" onclick="addRow()">+ Item</button>
+                <button class="btn btn-save" onclick="saveOrder()"><i class="fas fa-save"></i> Save</button>
+                <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                <button class="btn btn-clear" onclick="resetForm()">New</button>
+            </div>
+        </section>
+
+        <section id="history" class="tab-section">
+            <div class="history-wrapper">
+                <h2>Invoice History</h2>
+                <input type="text" id="search" placeholder="Search Customer..." onkeyup="renderHistory()" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc;">
+                <table class="tally-table" style="border:1px solid #ccc;">
+                    <thead style="background:#eee;"><tr><th>Date</th><th>Customer</th><th>Total</th><th>Action</th></tr></thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- DATA & INIT ---
+        let orders = JSON.parse(localStorage.getItem('rk_sweets_a4')) || [];
+        document.getElementById('billDate').valueAsDate = new Date();
+        document.getElementById('invoiceNo').value = "INV-" + (orders.length + 1001);
+        addRow(); // Start with one row
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-section').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'history') renderHistory();
+        }
+
+        // --- CORE FUNCTIONS ---
+        function addRow(name='', qty=1, rate=0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align:center;"></td>
+                <td><input type="text" class="i-name" placeholder="Item Name" value="${name}"></td>
+                <td><input type="number" class="i-qty" value="${qty}" oninput="calc()" style="text-align:center;"></td>
+                <td><input type="number" class="i-rate" value="${rate}" oninput="calc()" style="text-align:right;"></td>
+                <td style="text-align:right;"><span class="i-total">0.00</span> <span class="no-print" onclick="this.closest('tr').remove(); calc(); updateSI();" style="color:red; cursor:pointer; margin-left:5px;">x</span></td>
+            `;
+            // Insert row but ensure we don't break layout. 
+            // In A4 CSS, we rely on content flow.
+            document.getElementById('billBody').appendChild(tr);
+            updateSI();
+            calc();
+        }
+
+        function updateSI() {
+            let rows = document.querySelectorAll('#billBody tr');
+            rows.forEach((row, index) => { row.cells[0].innerText = index + 1; });
+        }
+
+        function calc() {
+            let sub = 0;
+            document.querySelectorAll('#billBody tr').forEach(row => {
+                const q = parseFloat(row.querySelector('.i-qty').value) || 0;
+                const r = parseFloat(row.querySelector('.i-rate').value) || 0;
+                const tot = q * r;
+                row.querySelector('.i-total').innerText = tot.toFixed(2);
+                sub += tot;
+            });
+
+            const gstMode = document.getElementById('gstMode').value;
+            let gst = 0, grand = sub;
+
+            if(gstMode === 'exclusive') { gst = sub * 0.05; grand = sub + gst; }
+            else if(gstMode === 'inclusive') { gst = sub - (sub/1.05); sub = sub - gst; grand = sub + gst; }
+
+            document.getElementById('subTotal').innerText = sub.toFixed(2);
+            document.getElementById('gstVal').innerText = gst.toFixed(2);
+            document.getElementById('grandTotal').innerText = grand.toFixed(2);
+            document.getElementById('amtWords').innerText = numToWords(Math.round(grand));
+            
+            // Balance
+            const paid = parseFloat(document.getElementById('paidAmt').value) || 0;
+            document.getElementById('balanceDue').innerText = (grand - paid).toFixed(2);
+        }
+
+        function saveOrder() {
+            const name = document.getElementById('custName').value;
+            if(!name) return alert("Customer Name Required!");
+            const items = [];
+            document.querySelectorAll('#billBody tr').forEach(row => {
+                items.push({ 
+                    name: row.querySelector('.i-name').value, 
+                    qty: row.querySelector('.i-qty').value, 
+                    rate: row.querySelector('.i-rate').value 
+                });
+            });
+            const newOrder = {
+                id: Date.now(), invNo: document.getElementById('invoiceNo').value,
+                date: document.getElementById('billDate').value, cust: name,
+                total: document.getElementById('grandTotal').innerText, 
+                paid: document.getElementById('paidAmt').value, items: items
+            };
+            orders.push(newOrder);
+            localStorage.setItem('rk_sweets_a4', JSON.stringify(orders));
+            alert("Saved!");
+            resetForm();
+        }
+
+        function resetForm() {
+            document.getElementById('custName').value = "";
+            document.getElementById('custPhone').value = "";
+            document.getElementById('billBody').innerHTML = ""; 
+            addRow(); 
+            document.getElementById('invoiceNo').value = "INV-" + (orders.length + 1001);
+            document.getElementById('paidAmt').value = 0;
+            calc();
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = orders.slice().reverse().map(o => `
+                <tr>
+                    <td>${o.date}</td><td>${o.cust}</td><td>₹${o.total}</td>
+                    <td><button onclick="rePrint(${o.id})" style="background:#1e3a8a; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Print</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function rePrint(id) {
+            const o = orders.find(x => x.id === id);
+            document.getElementById('custName').value = o.cust; document.getElementById('invoiceNo').value = o.invNo;
+            document.getElementById('billDate').value = o.date;
+            document.getElementById('billBody').innerHTML = "";
+            o.items.forEach(i => addRow(i.name, i.qty, i.rate));
+            document.getElementById('paidAmt').value = o.paid;
+            switchTab('billing');
+            setTimeout(() => window.print(), 500);
+        }
+
+        function numToWords(n) {
+            if (n == 0) return "Zero Only";
+            const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+            const b = ['', '', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            const num = parseInt(n);
+            if(num.toString().length > 9) return 'Overflow';
+            const n_array = ('000000000' + num).slice(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+            if (!n_array) return; 
+            let str = '';
+            str += (n_array[1] != 0) ? (a[Number(n_array[1])] || b[n_array[1][0]] + ' ' + a[n_array[1][1]]) + 'Crore ' : '';
+            str += (n_array[2] != 0) ? (a[Number(n_array[2])] || b[n_array[2][0]] + ' ' + a[n_array[2][1]]) + 'Lakh ' : '';
+            str += (n_array[3] != 0) ? (a[Number(n_array[3])] || b[n_array[3][0]] + ' ' + a[n_array[3][1]]) + 'Thousand ' : '';
+            str += (n_array[4] != 0) ? (a[Number(n_array[4])] || b[n_array[4][0]] + ' ' + a[n_array[4][1]]) + 'Hundred ' : '';
+            str += (n_array[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n_array[5])] || b[n_array[5][0]] + ' ' + a[n_array[5][1]]) : '';
+            return str + 'Only';
+        }
+    </script>
+</body>
+</html>
